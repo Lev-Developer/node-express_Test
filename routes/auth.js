@@ -62,6 +62,27 @@ router.post('/login', async (req,res)=>{
     console.log(e);
   }
 })
+router.post('/register', async (req, res) => {
+  try {
+    const {email, password, repeat, name} = req.body
+    const candidate = await User.findOne({ email })
+
+    if (candidate) {
+      req.flash('registerError', 'Пользователь с таким email уже существует')
+      res.redirect('/auth/login#register')
+    } else {
+      const hashPassword = await bcrypt.hash(password, 10)
+      const user = new User({
+        email, name, password: hashPassword, cart: {items: []}
+      })
+      await user.save()
+      await transporter.sendMail(regEmail(email))
+      res.redirect('/auth/login#login')
+    }
+  } catch (e) {
+    console.log(e)
+  }
+})
 
 router.get('/reset', (req, res) => {
   res.render('auth/reset', {
